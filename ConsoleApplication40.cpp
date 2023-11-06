@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <vector>
 #include <random>
 #include <string>
@@ -10,58 +10,217 @@
 using namespace std;
 using namespace chrono;
 
+HANDLE hand = GetStdHandle(STD_OUTPUT_HANDLE);
+COORD cord;
+
+
+void statsOutput(int x, int y, int winX, int winY, int maxX, int maxY, string dirX, string dirY, int r, int red, int green, int blue, int range, int bounce_count)
+{
+    cord.X = 0;
+    cord.Y = 0;
+
+    SetConsoleCursorPosition(hand, cord);
+
+    cout << "window size:" << endl;
+    cout << "x: " << winX << endl;
+    cout << "y: " << winY << endl;
+
+    cout << endl;
+
+    cout << "current position:" << endl;
+    cout << "x: " << x; for (int i = 0; i < to_string(maxX).size() - to_string(x).size(); i++) { cout << ' '; } cout << endl;
+    cout << "y: " << y; for (int i = 0; i < to_string(maxY).size() - to_string(y).size(); i++) { cout << ' '; } cout << endl;
+
+    cout << endl;
+
+    cout << "min x: 0" << endl;
+    cout << "max x: " << maxX << endl;
+    cout << "min y: 0" << endl;
+    cout << "max y: " << maxY << endl;
+
+    cout << endl;
+
+    cout << "currend direction:" << endl;
+
+    cout << "x: " << dirX; for (int i = 0; i < 5 - dirX.size(); i++) { cout << ' '; } cout << endl;
+    cout << "y: " << dirY; for (int i = 0; i < 4 - dirY.size(); i++) { cout << ' '; } cout << endl;
+
+    cout << endl;
+
+    cout << "ball radius: " << r << endl;
+    cout << "ball diameter: " << 2 * r << endl;
+
+    cout << endl;
+
+    cout << "current color:" << endl;
+    cout << "R: " << red; for (int i = 0; i < 3 - to_string(red).size(); i++) { cout << ' '; } cout << endl;
+    cout << "G: " << green; for (int i = 0; i < 3 - to_string(green).size(); i++) { cout << ' '; } cout << endl;
+    cout << "B: " << blue; for (int i = 0; i < 3 - to_string(blue).size(); i++) { cout << ' '; } cout << endl;
+
+    cout << endl;
+
+    cout << "range (pixels per frame): " << range << endl;
+
+    cout << endl;
+
+    cout << "bounce count: " << bounce_count << endl;
+}
+
+
+void setRandomDirection(string& dirX, string& dirY)
+{
+    int x = rand() % 2;
+    int y = rand() % 2;
+
+    dirX = (x ? "right" : "left");
+    dirY = (y ? "down" : "up");
+}
+
+
+void setMaxCords(int& maxX, int& maxY, int winX, int winY, int r)
+{
+    maxX = winX - (2 * r);
+    maxY = winY - (2 * r);
+}
+
+
+void setRandomCords(int& x, int& y, int maxX, int maxY)
+{
+    x = rand() % (maxX + 1);
+    y = rand() % (maxY + 1);
+}
+
+
+void setRandomColor(sf::CircleShape& ball, int& red, int& green, int& blue)
+{
+    red = rand() % 256;
+    green = rand() % 256;
+    blue = rand() % 256;
+
+    ball.setFillColor(sf::Color( red, green, blue ));
+}
+
+
+//void setNextColor(sf::CircleShape& ball, vector<sf::Color> colors, int& color_id)
+//{
+//    color_id++;
+//    color_id %= colors.size();
+//
+//    ball.setFillColor(colors[color_id]);
+//}
+//
+//int setRandomColor(sf::CircleShape& ball, vector<sf::Color> colors)
+//{
+//    int color_id = rand() % colors.size();
+//
+//    ball.setFillColor(colors[color_id]);
+//
+//    return color_id;
+//}
+
+
+void changeDirX(string& dirX)
+{
+    dirX = (dirX == "right" ? "left" : "right");
+}
+
+
+void changeDirY(string& dirY)
+{
+    dirY = (dirY == "down" ? "up" : "down");
+}
+
+
+void outputShape(sf::RenderWindow& window, sf::CircleShape& ball)
+{
+    window.clear(sf::Color::Black);
+
+    window.draw(ball);
+
+    window.display();
+}
+
+
+void moveShape(sf::CircleShape& ball, int& x, int& y, int maxX, int maxY, string dirX, string dirY, int range)
+{
+    for (int i = 0; i < range; i++)
+    {
+        int nextX = x + (dirX == "right" ? 1 : -1);
+        int nextY = y + (dirY == "down" ? 1 : -1);
+
+        if ((0 <= nextX && nextX <= maxX) && (0 <= nextY && nextY <= maxY))
+        {
+            x = nextX;
+            y = nextY;
+        }
+        else break;
+    }
+
+    ball.setPosition(x, y);
+}
+
+
 int main()
 {
     srand(time(NULL));
 
-    vector<sf::Color> colors
+    /*vector<sf::Color> colors =
     {
         sf::Color::Red,
         sf::Color::Yellow,
         sf::Color::Green,
         sf::Color::Cyan,
         sf::Color::Blue,
-        sf::Color::Magenta
-    };
+        sf::Color::Magenta,
+    };*/
 
     int winX, winY, r;
+    int maxX, maxY;
+    int x, y;
+    /*
+    int color_id;
+    */
+    string dirX, dirY;
+    int red, green, blue;
+    int bounce_count = 0, range = 1;
+
 
     cout << "window size: ";
     cin >> winX >> winY;
 
+    winX = abs(winX);
+    winY = abs(winY);
+
     cout << "ball radius: ";
     cin >> r;
 
-    int maxX = winX - (2 * r);
-    int maxY = winY - (2 * r);
+    r = abs(r);
+
+    if (2 * r > min(winX, winY)) r = min(winX, winY) / 2;
 
 
-    int x = rand() % (maxX + 1), y = rand() % (maxY + 1);
-    string direction = "lu";
+    setMaxCords(maxX, maxY, winX, winY, r);
 
-    int temp = rand() % 4;
+    setRandomCords(x, y, maxX, maxY);
 
-    switch (temp)
-    {
-    case 0: direction = "rd"; break;
-    case 1: direction = "ld"; break;
-    case 2: direction = "lu"; break;
-    case 3: direction = "ru"; break;
-    }
-
-    int amc = 0;
-    int color_id = 0;
-
-    cout << "angle match count: " << amc << endl;
+    setRandomDirection(dirX, dirY);
 
 
     sf::RenderWindow window(sf::VideoMode(winX, winY), "My window");
 
 
     sf::CircleShape ball(r);
-    ball.setFillColor(colors[color_id]);
+
+    /*
+    color_id = setRandomColor(ball, colors);
+    */
+
+    setRandomColor(ball, red, green, blue);
+
     ball.setPosition(x, y);
 
+
+    system("cls");
 
 
     while (window.isOpen())
@@ -76,161 +235,27 @@ int main()
             }
         }
 
-        if (direction == "rd")
+
+        statsOutput(x, y, winX, winY, maxX, maxY, dirX, dirY, r, red, green, blue, range, bounce_count);
+
+        outputShape(window, ball);
+
+        moveShape(ball, x, y, maxX, maxY, dirX, dirY, range);
+
+        if (x == 0 || y == 0 || x == maxX || y == maxY)
         {
-            if (x < maxX && y < maxY)
-            {
-                //window.clear(sf::Color::Black);
+            if (x <= 0 || x >= maxX) changeDirX(dirX);
 
-                window.draw(ball);
+            if (y <= 0 || y >= maxY) changeDirY(dirY);
 
-                window.display();
 
-                //this_thread::sleep_for(milliseconds(1));
+            bounce_count++;
+            range += log10(1 + (bounce_count - 1) % 10);
 
-                x++;
-                y++;
 
-                ball.setPosition(x, y);
-            }
-            else
-            {
-                if (x == maxX && y == maxY)
-                {
-                    direction = "lu";
-
-                    amc++;
-
-                    system("cls");
-
-                    cout << "window size: " << winX << " " << winY << endl;
-                    cout << "ball radius: " << r << endl;
-                    cout << "angle match count: " << amc << endl;
-                }
-                else if (x == maxX) direction = "ld";
-                else if (y == maxY) direction = "ru";
-
-                color_id++;
-                color_id %= 6;
-                ball.setFillColor(colors[color_id]);
-            }
+            setRandomColor(ball, red, green, blue);
         }
-        else if (direction == "ld")
-        {
-            if (x > 0 && y < maxY)
-            {
-                //window.clear(sf::Color::Black);
 
-                window.draw(ball);
-
-                window.display();
-
-                //this_thread::sleep_for(milliseconds(1));
-
-                x--;
-                y++;
-
-                ball.setPosition(x, y);
-            }
-            else
-            {
-                if (x == 0 && y == maxY)
-                {
-                    direction = "ru";
-
-                    amc++;
-
-                    system("cls");
-
-                    cout << "window size: " << winX << " " << winY << endl;
-                    cout << "ball radius: " << r << endl;
-                    cout << "angle match count: " << amc << endl;
-                }
-                else if (x == 0) direction = "rd";
-                else if (y == maxY) direction = "lu";
-
-                color_id++;
-                color_id %= 6;
-                ball.setFillColor(colors[color_id]);
-            }
-        }
-        else if (direction == "lu")
-        {
-            if (x > 0 && y > 0)
-            {
-                //window.clear(sf::Color::Black);
-
-                window.draw(ball);
-
-                window.display();
-
-                //this_thread::sleep_for(milliseconds(1));
-
-                x--;
-                y--;
-
-                ball.setPosition(x, y);
-            }
-            else
-            {
-                if (x == 0 && y == 0)
-                {
-                    direction = "rd";
-
-                    amc++;
-
-                    system("cls");
-
-                    cout << "window size: " << winX << " " << winY << endl;
-                    cout << "ball radius: " << r << endl;
-                    cout << "angle match count: " << amc << endl;
-                }
-                else if (x == 0) direction = "ru";
-                else if (y == 0) direction = "ld";
-
-                color_id++;
-                color_id %= 6;
-                ball.setFillColor(colors[color_id]);
-            }
-        }
-        else if (direction == "ru")
-        {
-            if (x < maxX && y > 0)
-            {
-                //window.clear(sf::Color::Black);
-
-                window.draw(ball);
-
-                window.display();
-
-                //this_thread::sleep_for(milliseconds(1));
-
-                x++;
-                y--;
-
-                ball.setPosition(x, y);
-            }
-            else
-            {
-                if (x == maxX && y == 0)
-                {
-                    direction = "ld";
-
-                    amc++;
-
-                    system("cls");
-
-                    cout << "window size: " << winX << " " << winY << endl;
-                    cout << "ball radius: " << r << endl;
-                    cout << "angle match count: " << amc << endl;
-                }
-                else if (x == maxX) direction = "lu";
-                else if (y == 0) direction = "rd";
-
-                color_id++;
-                color_id %= 6;
-                ball.setFillColor(colors[color_id]);
-            }
-        }
+        this_thread::sleep_for(milliseconds(1));
     }
 }
